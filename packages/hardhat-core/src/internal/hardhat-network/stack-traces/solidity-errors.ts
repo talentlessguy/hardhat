@@ -1,6 +1,6 @@
 import { bytesToHex as bufferToHex } from "@nomicfoundation/ethereumjs-util";
 
-import { panicErrorCodeToMessage } from "./panic-errors";
+import { getMessageFromStackTraceEntry } from "@nomicfoundation/edr";
 import {
   CONSTRUCTOR_FUNCTION_NAME,
   PRECOMPILE_FUNCTION_NAME,
@@ -82,9 +82,7 @@ export function encodeSolidityStackTrace(
     return previousPrepareStackTrace!(error, stack);
   };
 
-  const msg = getMessageFromLastStackTraceEntry(
-    stackTrace[stackTrace.length - 1]
-  );
+  const msg = getMessageFromStackTraceEntry(stackTrace[stackTrace.length - 1]);
 
   const solidityError = new SolidityError(
     msg !== undefined ? msg : fallbackMessage,
@@ -212,109 +210,6 @@ function sourceReferenceToSolidityCallsite(
       : UNKNOWN_FUNCTION_NAME,
     sourceReference.line
   );
-}
-
-function getMessageFromLastStackTraceEntry(
-  stackTraceEntry: SolidityStackTraceEntry
-): string | undefined {
-  switch (stackTraceEntry.type) {
-    case StackTraceEntryType.PRECOMPILE_ERROR:
-      return `Transaction reverted: call to precompile ${stackTraceEntry.precompile} failed`;
-
-    case StackTraceEntryType.FUNCTION_NOT_PAYABLE_ERROR:
-      return `Transaction reverted: non-payable function was called with value ${stackTraceEntry.value.toString(
-        10
-      )}`;
-
-    case StackTraceEntryType.INVALID_PARAMS_ERROR:
-      return `Transaction reverted: function was called with incorrect parameters`;
-
-    case StackTraceEntryType.FALLBACK_NOT_PAYABLE_ERROR:
-      return `Transaction reverted: fallback function is not payable and was called with value ${stackTraceEntry.value.toString(
-        10
-      )}`;
-
-    case StackTraceEntryType.FALLBACK_NOT_PAYABLE_AND_NO_RECEIVE_ERROR:
-      return `Transaction reverted: there's no receive function, fallback function is not payable and was called with value ${stackTraceEntry.value.toString(
-        10
-      )}`;
-
-    case StackTraceEntryType.UNRECOGNIZED_FUNCTION_WITHOUT_FALLBACK_ERROR:
-      return `Transaction reverted: function selector was not recognized and there's no fallback function`;
-
-    case StackTraceEntryType.MISSING_FALLBACK_OR_RECEIVE_ERROR:
-      return `Transaction reverted: function selector was not recognized and there's no fallback nor receive function`;
-
-    case StackTraceEntryType.RETURNDATA_SIZE_ERROR:
-      return `Transaction reverted: function returned an unexpected amount of data`;
-
-    case StackTraceEntryType.NONCONTRACT_ACCOUNT_CALLED_ERROR:
-      return `Transaction reverted: function call to a non-contract account`;
-
-    case StackTraceEntryType.CALL_FAILED_ERROR:
-      return `Transaction reverted: function call failed to execute`;
-
-    case StackTraceEntryType.DIRECT_LIBRARY_CALL_ERROR:
-      return `Transaction reverted: library was called directly`;
-
-    case StackTraceEntryType.UNRECOGNIZED_CREATE_ERROR:
-    case StackTraceEntryType.UNRECOGNIZED_CONTRACT_ERROR:
-      if (stackTraceEntry.message.isErrorReturnData()) {
-        return `VM Exception while processing transaction: reverted with reason string '${stackTraceEntry.message.decodeError()}'`;
-      }
-
-      if (stackTraceEntry.message.isPanicReturnData()) {
-        const message = panicErrorCodeToMessage(
-          stackTraceEntry.message.decodePanic()
-        );
-        return `VM Exception while processing transaction: ${message}`;
-      }
-
-      if (!stackTraceEntry.message.isEmpty()) {
-        const returnData = Buffer.from(stackTraceEntry.message.value).toString(
-          "hex"
-        );
-
-        return `VM Exception while processing transaction: reverted with an unrecognized custom error (return data: 0x${returnData})`;
-      }
-
-      if (stackTraceEntry.isInvalidOpcodeError) {
-        return "VM Exception while processing transaction: invalid opcode";
-      }
-
-      return "Transaction reverted without a reason string";
-
-    case StackTraceEntryType.REVERT_ERROR:
-      if (stackTraceEntry.message.isErrorReturnData()) {
-        return `VM Exception while processing transaction: reverted with reason string '${stackTraceEntry.message.decodeError()}'`;
-      }
-
-      if (stackTraceEntry.isInvalidOpcodeError) {
-        return "VM Exception while processing transaction: invalid opcode";
-      }
-
-      return "Transaction reverted without a reason string";
-
-    case StackTraceEntryType.PANIC_ERROR:
-      const panicMessage = panicErrorCodeToMessage(stackTraceEntry.errorCode);
-      return `VM Exception while processing transaction: ${panicMessage}`;
-
-    case StackTraceEntryType.CUSTOM_ERROR:
-      return `VM Exception while processing transaction: ${stackTraceEntry.message}`;
-
-    case StackTraceEntryType.OTHER_EXECUTION_ERROR:
-      // TODO: What if there was returnData?
-      return `Transaction reverted and Hardhat couldn't infer the reason.`;
-
-    case StackTraceEntryType.UNMAPPED_SOLC_0_6_3_REVERT_ERROR:
-      return "Transaction reverted without a reason string and without a valid sourcemap provided by the compiler. Some line numbers may be off. We strongly recommend upgrading solc and always using revert reasons.";
-
-    case StackTraceEntryType.CONTRACT_TOO_LARGE_ERROR:
-      return "Transaction reverted: trying to deploy a contract whose code is too large";
-
-    case StackTraceEntryType.CONTRACT_CALL_RUN_OUT_OF_GAS_ERROR:
-      return "Transaction reverted: contract call run out of gas and made the transaction revert";
-  }
 }
 
 // Note: This error class MUST NOT extend ProviderError, as libraries

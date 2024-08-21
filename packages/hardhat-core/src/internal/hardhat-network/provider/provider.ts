@@ -43,7 +43,6 @@ import { isErrorResponse } from "../../core/providers/http";
 import { getHardforkName } from "../../util/hardforks";
 import { createModelsAndDecodeBytecodes } from "../stack-traces/compiler-to-model";
 import { ConsoleLogger } from "../stack-traces/consoleLogger";
-import { ContractsIdentifier } from "../stack-traces/contracts-identifier";
 import {
   VmTraceDecoder,
   initializeVmTraceDecoder,
@@ -223,8 +222,7 @@ export class EdrProviderWrapper
     const printLineFn = loggerConfig.printLineFn ?? printLine;
     const replaceLastLineFn = loggerConfig.replaceLastLineFn ?? replaceLastLine;
 
-    const contractsIdentifier = new ContractsIdentifier();
-    const vmTraceDecoder = new VmTraceDecoder(contractsIdentifier);
+    const vmTraceDecoder = new VmTraceDecoder();
 
     const hardforkName = getHardforkName(config.hardfork);
 
@@ -545,7 +543,7 @@ export class EdrProviderWrapper
       );
 
       log(
-        "ContractsIdentifier failed to be updated. Please report this to help us improve Hardhat.\n",
+        "VmTraceDecoder failed to be updated. Please report this to help us improve Hardhat.\n",
         error
       );
 

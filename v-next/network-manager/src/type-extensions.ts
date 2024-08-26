@@ -66,7 +66,7 @@ declare module "@ignored/hardhat-vnext/types/config" {
 
   export interface HttpNetworkConfig {
     type: "http";
-    chainType: ChainType;
+    chainType?: ChainType;
     chainId: number;
     from?: string;
     gas: "auto" | number;
@@ -81,7 +81,7 @@ declare module "@ignored/hardhat-vnext/types/config" {
 
   export interface EdrNetworkConfig {
     type: "edr";
-    chainType: ChainType;
+    chainType?: ChainType;
     chainId: number;
     from: string;
     gas: "auto" | number;

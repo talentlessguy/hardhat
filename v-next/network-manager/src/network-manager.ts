@@ -23,10 +23,10 @@ export class NetworkManagerImplementation implements NetworkManager {
     defaultNetwork: string,
     defaultChainType: DefaultChainType,
     networkConfig: Record<string, NetworkConfig>,
-    hoookManager: HookManager,
+    hookManager: HookManager,
   ) {
     this.#networkConfig = networkConfig;
-    this.#hookManager = hoookManager;
+    this.#hookManager = hookManager;
     this.#defaultNetwork = defaultNetwork;
     this.#defaultChainType = defaultChainType;
   }
@@ -57,13 +57,32 @@ export class NetworkManagerImplementation implements NetworkManager {
   ): Promise<NetworkConnection<ChainTypeT>> {
     const name = networkName ?? this.#defaultNetwork;
 
+    // if this.#networkConfig[name].chainType is !== undefined, it must match chainType or throw
+
+    const createProvider = async (
+      networkConnection: NetworkConnectionImplementation<ChainTypeT>,
+    ) => {
+      const ethereumProvider = await EthereumProvider.create({
+        url: this.#networkConfig[name].url,
+        networkName: name,
+        extraHeaders: this.#networkConfig[name].headers,
+        timeout: this.#networkConfig[name].timeout,
+        hookManager: this.#hookManager, // pass the hook manager to the provider so we can run the onRequest hook handlers
+        networkConnection,
+      });
+
+      return ethereumProvider;
+    };
+
     // TODO: If the network type is HTTP or EDR we do different things here.
-    return new NetworkConnectionImplementation(
-      this.#hookManager,
+    return NetworkConnectionImplementation.create(
       name,
+      chainType ??
+        this.#networkConfig[name].chainType ??
+        (this.#defaultChainType as ChainTypeT),
       this.#networkConfig[name],
-      chainType ?? (this.#defaultChainType as ChainTypeT),
-      {} as Eip1193Provider,
+      this.#hookManager,
+      createProvider,
     );
   }
 }
@@ -77,22 +96,51 @@ export class NetworkConnectionImplementation<
   public readonly networkName: string;
   public readonly config: NetworkConfig;
   public readonly chainType: ChainTypeT;
-  public readonly provider: Eip1193Provider;
+  #provider!: Eip1193Provider;
 
-  constructor(
+  public static async create<ChainTypeT extends ChainType | string>(
+    networkName: string,
+    chainType: ChainTypeT,
+    networkConfig: NetworkConfig,
+    hookManager: HookManager,
+    createProvider: (
+      networkConnection: NetworkConnectionImplementation<ChainTypeT>,
+    ) => Promise<Eip1193Provider>,
+  ): Promise<NetworkConnectionImplementation<ChainTypeT>> {
+    const netconn = new NetworkConnectionImplementation(
+      hookManager,
+      networkName,
+      networkConfig,
+      chainType,
+    );
+
+    const provider = await createProvider(netconn);
+    netconn.#setProvider(provider);
+    return netconn;
+  }
+
+  private constructor(
     hookManager: HookManager,
     networkName: string,
     config: NetworkConfig,
     chainType: ChainTypeT,
-    provider: Eip1193Provider,
+    // provider: Eip1193Provider,
   ) {
     this.#hookManager = hookManager;
     this.networkName = networkName;
     this.config = config;
     this.chainType = chainType;
-    this.provider = provider;
+    // this.provider = provider;
 
     this.close = this.close.bind(this);
+  }
+
+  public get provider(): Eip1193Provider {
+    return this.#provider;
+  }
+
+  #setProvider(provider: Eip1193Provider) {
+    this.#provider = provider;
   }
 
   public async close(): Promise<void> {

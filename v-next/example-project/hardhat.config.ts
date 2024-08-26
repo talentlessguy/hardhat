@@ -142,6 +142,7 @@ const config: HardhatUserConfig = {
   ],
   plugins: [pluginExample, networkManagerPlugin],
   privateKey: configVariable("privateKey"),
+  // defaultChainType: "l1",
   networks: {
     hardhat: {
       type: "http",

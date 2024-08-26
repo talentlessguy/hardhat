@@ -16,7 +16,8 @@ const { close } = await hre.network.connect();
 await close();
 
 // Connects to the network with the name "mainnet", with the chain type "l1"
-const {} = await hre.network.connect("mainnet", "l1");
+const mainnet = await hre.network.connect("mainnet", "l1");
+mainnet.provider.request({ method: "eth_blockNumber" });
 
 // Connects to the network with the name "op", with the chain type "optimisim"
 const {} = await hre.network.connect("op", "optimism");

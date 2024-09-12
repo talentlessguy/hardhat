@@ -1,5 +1,13 @@
 # @nomicfoundation/hardhat-network-helpers
 
+## 1.0.12
+
+### Patch Changes
+
+- 8fa15e7: Add support for ZKsync's development mode
+- Updated dependencies [07e0a9c]
+  - hardhat@2.22.11
+
 ## 1.0.11
 
 ### Patch Changes

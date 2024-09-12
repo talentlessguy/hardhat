@@ -1,5 +1,14 @@
 # @nomicfoundation/hardhat-chai-matchers
 
+## 2.0.8
+
+### Patch Changes
+
+- 1a0e1e3: Enhanced error message in `.emit` matcher for overloaded events (thanks @iosh!)
+- 7964bf0: Enhanced the `reverted` matcher to correctly handle `bytes32` strings (thanks @iosh!)
+- Updated dependencies [07e0a9c]
+  - hardhat@2.22.11
+
 ## 2.0.7
 
 ### Patch Changes

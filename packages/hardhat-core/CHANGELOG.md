@@ -1,5 +1,11 @@
 # hardhat
 
+## 2.22.11
+
+### Patch Changes
+
+- 07e0a9c: Hardhat node can now handle large response objects by streaming them.
+
 ## 2.22.10
 
 ### Patch Changes

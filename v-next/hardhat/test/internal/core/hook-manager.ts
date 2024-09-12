@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/consistent-type-assertions -- the 
+/* eslint-disable @typescript-eslint/consistent-type-assertions -- the
 sequential tests require casting - see the `runSequentialHandlers` describe */
 
 import type { HardhatUserConfig } from "../../../src/config.js";
@@ -487,13 +487,13 @@ describe("HookManager", () => {
      */
     describe("runSequentialHandlers", () => {
       it("Should return the empty set if no handlers are registered", async () => {
-        const resultHreCreated = await hre.hooks.runSequentialHandlers(
+        const result = await hre.hooks.runSequentialHandlers(
           "hre",
-          "created",
-          [hre],
+          "testExample" as keyof HardhatHooks["hre"],
+          ["input"] as any,
         );
 
-        assert.deepEqual(resultHreCreated, []);
+        assert.deepEqual(result, []);
       });
 
       it("Should return a return entry per handler", async () => {
@@ -650,23 +650,26 @@ describe("HookManager", () => {
 
       it("Should pass the context to the handler (for non-config)", async () => {
         hre.hooks.registerHandlers("hre", {
-          created: async (
+          testExample: async (
             context: HookContext,
-            hreInHandler: HardhatRuntimeEnvironment,
-          ): Promise<void> => {
+            input: string,
+          ): Promise<string> => {
             assert(
               context !== null && typeof context === "object",
-              "hook context should be passed",
+              "Context should be passed for parallel processing",
             );
-            assert.equal(hreInHandler, hre);
+            assert.equal(input, "input");
+            return "result";
           },
-        });
+        } as Partial<HardhatHooks["hre"]>);
 
-        const result = await hre.hooks.runParallelHandlers("hre", "created", [
-          hre,
-        ]);
+        const result = await hre.hooks.runParallelHandlers(
+          "hre",
+          "testExample" as any,
+          ["input"],
+        );
 
-        assert.deepEqual(result, [undefined]);
+        assert.deepEqual(result, ["result"]);
       });
 
       it("Should not pass the hook context for config", async () => {

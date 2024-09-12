@@ -234,7 +234,11 @@ export interface HardhatRuntimeEnvironmentHooks {
   created: (
     context: HookContext,
     hre: HardhatRuntimeEnvironment,
-  ) => Promise<void>;
+    next: (
+      nextContext: HookContext,
+      nextHre: HardhatRuntimeEnvironment,
+    ) => Promise<HardhatRuntimeEnvironment>,
+  ) => Promise<HardhatRuntimeEnvironment>;
 }
 
 /**

@@ -134,7 +134,14 @@ export class HardhatRuntimeEnvironmentImplementation
       globalOptionDefinitions,
     );
 
-    await hooks.runSequentialHandlers("hre", "created", [hre]);
+    await hooks.runHandlerChain(
+      "hre",
+      "created",
+      [hre],
+      async (_context, updatedHre) => {
+        return updatedHre;
+      },
+    );
 
     return hre;
   }
